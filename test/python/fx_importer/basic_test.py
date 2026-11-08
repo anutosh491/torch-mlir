@@ -460,3 +460,17 @@ def test_stack_trace():
     m = fx.export_and_import(Basic(), x, y, func_name="test_stack_trace")
     mlir_asm = m.operation.get_asm(enable_debug_info=True)
     print(mlir_asm)
+
+
+@run
+# CHECK-LABEL: test_prims_fma
+# CHECK: torch.prims.fma
+# CHECK-SAME: !torch.vtensor<[2,3],f32>, !torch.vtensor<[],f32>, !torch.vtensor<[3],f32> -> !torch.vtensor<[2,3],f32>
+def test_prims_fma():
+    from torch._inductor import inductor_prims
+
+    class Fma(nn.Module):
+        def forward(self, a, b, c):
+            return inductor_prims.fma(a, b, c)
+
+    print(fx.export_and_import(Fma(), torch.randn(2, 3), torch.randn(()), torch.randn(3)))
